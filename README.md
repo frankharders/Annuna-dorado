@@ -8,11 +8,12 @@ for reproducibility (M&M-ready).
 
 | Component | Version |
 |---|---|
-| Scripts | v2.1.0 |
+| Scripts | v2.2.0 |
 | Dorado | v2.1.1 (standalone binary, **not** in the conda env) |
 | Simplex model | `dna_r10.4.1_e8.2_400bps_sup@v5.2.0` (explicitly pinned; no sup exists for v6.0) |
 | Modbase models | `6mA@v1`, `4mC_5mC@v1` (01a only) |
 | Barcode kit | SQK-NBD114-96, `--barcode-both-ends` |
+| Moves table | `--emit-moves` (both scripts): per-read `mv:B`/`ts` tags for signal-level analysis |
 | QC env | `basecall-qc` (samtools ≥1.21, ont-modkit ≥0.6, cramino, NanoPlot, nanoq, seqkit, pod5, MultiQC) |
 
 ## Files
@@ -63,7 +64,10 @@ sbatch 01a_dorado_basecall_mod.sh   # or 01b
 ```
 
 Barcodes are classified in the BAM (`BC` tag); physical per-barcode splitting
-is a separate downstream step (`dorado demux --no-classify`).
+is a separate downstream step (`dorado demux --no-classify`). With
+`--emit-moves`, every read additionally carries the move table (`mv:B` +
+`ts` tags), required for signal-level tools; expect a substantially larger
+BAM (roughly +30–50%).
 
 ## Provenance file
 
@@ -74,7 +78,8 @@ Written per run, machine-readable, suitable as publication supplementary:
 - GPU types, NVIDIA driver, CUDA version
 - dorado version + sha256 of the binary; env tool versions
 - **BAM `@RG` header** — the authoritative record of the models actually used
-- first-pass QC: cramino (yield/N50/Q), `modkit summary` (01a), reads per barcode
+- first-pass QC: tag check (`mv`, and `MM`/`ML` in 01a — warns if missing),
+  cramino (yield/N50/Q), `modkit summary` (01a), reads per barcode
 
 ## Notes
 
