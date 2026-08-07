@@ -16,11 +16,11 @@
 #SBATCH --mail-type=FAIL,END
 
 #-----------------------------Output / error logs------------------------------
-#SBATCH --output=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-2/20260803_1348_P2I-00116-A_PBM39740_6f023de3/dorado-output_%j.txt
-#SBATCH --error=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-2/20260803_1348_P2I-00116-A_PBM39740_6f023de3/dorado-error_%j.txt
+#SBATCH --output=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-1/20260730_1322_P2I-00116-A_PBM40282_b639ac1a/dorado-output_%j.txt
+#SBATCH --error=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-1/20260730_1322_P2I-00116-A_PBM40282_b639ac1a/dorado-error_%j.txt
 
 #-----------------------------Job-informatie-----------------------------------
-#SBATCH --job-name=26-EQ-sup
+#SBATCH --job-name=VetB-demux-GPU
 #SBATCH --comment=1600002507
 
 #-----------------------------Resources----------------------------------------
@@ -40,13 +40,13 @@ set -euo pipefail
 shopt -s nullglob
 
 SCRIPT_NAME="01b_dorado_basecall.sh"
-SCRIPT_VERSION="2.1.0"
+SCRIPT_VERSION="2.2.0"
 
 ## Project ID (voor billing / terugvinden data)
 NGS_PROJECT="NGS-26-EQ"
 
 ## Paden
-FLOWCELL_DIR=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-2/20260803_1348_P2I-00116-A_PBM39740_6f023de3
+FLOWCELL_DIR=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-1/20260730_1322_P2I-00116-A_PBM40282_b639ac1a
 IN_DIR="${FLOWCELL_DIR}/pod5"
 OUT_DIR="${FLOWCELL_DIR}/01_basecalled"
 OUT_BAM="${OUT_DIR}/calls.sup.bam"
@@ -135,6 +135,7 @@ log "cramino         : $(cramino --version 2>&1 | head -1 || echo 'niet gevonden
 log "Model-spec      : ${MODEL_SPEC}"
 log "Barcode-kit     : ${KIT}"
 log "Demux-modus     : --barcode-both-ends (barcode 5' EN 3' vereist)"
+log "Emit-moves      : aan (mv:B/ts-tags per read; nodig voor signal-level analyse, grotere BAM)"
 
 #==============================================================================
 # Validatie voor de start
@@ -176,6 +177,14 @@ samtools view -H "${OUT_BAM}" \
     | tr '\t' '\n' \
     | grep -E 'basecall_model|runid|PU|PM|DT' \
     | while IFS= read -r line; do log "  ${line}"; done
+
+log "--- Tag-check (eerste read: moves aanwezig?) ---"
+FIRST_TAGS=$( (samtools view "${OUT_BAM}" || true) | head -n1 | tr '\t' '\n' \
+    | grep -oE '^(mv|ts|BC):' | sort -u | paste -sd, )
+log "  Tags gevonden : ${FIRST_TAGS:-GEEN}"
+if [[ ",${FIRST_TAGS}," != *",mv:,"* ]]; then
+    log "  WAARSCHUWING: mv-tag ontbreekt in eerste read!"
+fi
 
 log "--- cramino (yield / N50 / Q-score) ---"
 cramino "${OUT_BAM}" 2>&1 | while IFS= read -r line; do log "  ${line}"; done
