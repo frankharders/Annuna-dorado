@@ -156,6 +156,7 @@ log "POD5-bestanden  : ${POD5_COUNT} (totaal ${POD5_SIZE})"
 CMD=("${DORADO}" basecaller
      --device cuda:all
      --barcode-both-ends
+     --emit-moves
      --kit-name "${KIT}"
      "${MODEL_SPEC}"
      "${IN_DIR}")
