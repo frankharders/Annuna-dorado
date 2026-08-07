@@ -1,0 +1,38 @@
+# =============================================================================
+# Mamba environment: basecall-qc
+# Project : NGS-26-EQ (dorado 2.1.1 basecalling + eerste QC)
+# Auteur  : harde004
+# Versie  : 1.0.0
+# Aanmaken: mamba env create -f env_basecall_qc.yml
+# NB      : dorado zelf is een standalone binary (GIT/dorado-2.1.1-linux-x64),
+#           bewust NIET in deze env.
+# =============================================================================
+name: basecall-qc
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults        # blokkeer Anaconda 'defaults' (pkgs/main): ToS + trage/hangende solve
+dependencies:
+  # --- BAM handling ---
+  - samtools>=1.21          # view/sort/index, @RG-header check, BC-tag telling
+  - pigz                    # parallelle compressie bij evt. fastq-export
+
+  # --- Input-validatie (pod5) ---
+  - pod5                    # pod5 view/inspect: read counts, run-info, integriteit
+
+  # --- Read-level QC (unmapped BAM direct) ---
+  - nanoplot>=1.43          # NanoPlot --ubam: lengte/kwaliteit-plots + NanoStat
+  - cramino>=0.14           # zeer snelle BAM-stats (N50, yield, Q-score, mods aanwezig)
+  - nanoq                   # snelle fastq/BAM filtering + stats, streaming
+
+  # --- Algemene sequence-stats ---
+  - seqkit>=2.8             # stats/telling na demux per barcode
+
+  # --- Methylatie-QC (6mA / 4mC_5mC calls) ---
+  - ont-modkit>=0.6         # binary heet 'modkit'; modkit summary: sanity check MM/ML-tags
+
+  # --- Demux-QC / rapportage ---
+  - multiqc>=1.25           # aggregatie (nanostat/samtools/etc.) per project
+
+  # --- Utilities ---
+  - parallel                # GNU parallel voor per-barcode loops
