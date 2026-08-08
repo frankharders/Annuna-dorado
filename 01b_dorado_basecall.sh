@@ -16,8 +16,9 @@
 #SBATCH --mail-type=FAIL,END
 
 #-----------------------------Output / error logs------------------------------
-#SBATCH --output=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-1/20260730_1322_P2I-00116-A_PBM40282_b639ac1a/dorado-output_%j.txt
-#SBATCH --error=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-1/20260730_1322_P2I-00116-A_PBM40282_b639ac1a/dorado-error_%j.txt
+## Relatief: SLURM schrijft deze in de map waar 'sbatch' is aangeroepen.
+#SBATCH --output=dorado-output_%j.txt
+#SBATCH --error=dorado-error_%j.txt
 
 #-----------------------------Job-informatie-----------------------------------
 #SBATCH --job-name=VetB-demux-GPU
@@ -40,13 +41,15 @@ set -euo pipefail
 shopt -s nullglob
 
 SCRIPT_NAME="01b_dorado_basecall.sh"
-SCRIPT_VERSION="2.2.0"
+SCRIPT_VERSION="2.3.0"
 
 ## Project ID (voor billing / terugvinden data)
 NGS_PROJECT="NGS-26-EQ"
 
-## Paden
-FLOWCELL_DIR=/lustre/scratch/WUR/WBVR/harde004/NGS-26-EQ/NGS-26-EQ-1/20260730_1322_P2I-00116-A_PBM40282_b639ac1a
+## Paden — FLOWCELL_DIR wordt afgeleid uit de map waar 'sbatch' is aangeroepen.
+## Het script is daarmee kopieerbaar per flowcell zonder ook maar 1 regel te
+## editen: cd naar de flowcell-map en submit daarvandaan.
+FLOWCELL_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 IN_DIR="${FLOWCELL_DIR}/pod5"
 OUT_DIR="${FLOWCELL_DIR}/01_basecalled"
 OUT_BAM="${OUT_DIR}/calls.sup.bam"
@@ -141,6 +144,10 @@ log "Emit-moves      : aan (mv:B/ts-tags per read; nodig voor signal-level analy
 # Validatie voor de start
 #==============================================================================
 
+if [[ ! -d "${IN_DIR}" ]]; then
+    log "FOUT: ${IN_DIR} bestaat niet — is 'sbatch' wel vanuit de flowcell-map aangeroepen?"
+    exit 1
+fi
 POD5_COUNT=$(find "${IN_DIR}" -name "*.pod5" | wc -l)
 if [[ "${POD5_COUNT}" -eq 0 ]]; then
     log "FOUT: geen .pod5 bestanden gevonden in ${IN_DIR}"
