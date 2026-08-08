@@ -8,7 +8,7 @@ for reproducibility (M&M-ready).
 
 | Component | Version |
 |---|---|
-| Scripts | v2.2.0 |
+| Scripts | v2.3.0 |
 | Dorado | v2.1.1 (standalone binary, **not** in the conda env) |
 | Simplex model | `dna_r10.4.1_e8.2_400bps_sup@v5.2.0` (explicitly pinned; no sup exists for v6.0) |
 | Modbase models | `6mA@v1`, `4mC_5mC@v1` (01a only) |
@@ -37,12 +37,19 @@ scripts).
 
 ## Usage
 
-Edit the config block at the top of the script (`NGS_PROJECT`, `FLOWCELL_DIR`,
-`KIT`, `DORADO`, SBATCH mail/paths), then:
+The scripts are **portable per flowcell**: `FLOWCELL_DIR` is derived from the
+directory you submit from (`SLURM_SUBMIT_DIR`), and SLURM logs are written
+there too. Copy the script into the flowcell directory (or keep one central
+copy) and submit **from within the flowcell directory**:
 
 ```bash
+cd /path/to/<FLOWCELL_DIR>       # must contain pod5/
 sbatch 01a_dorado_basecall_mod.sh   # or 01b
 ```
+
+No per-flowcell path editing needed. One-time settings in the config block:
+`NGS_PROJECT`, `KIT`, `DORADO`, SBATCH mail address. The script aborts
+cleanly if the submit directory contains no `pod5/`.
 
 ## Input
 
@@ -83,6 +90,8 @@ Written per run, machine-readable, suitable as publication supplementary:
 
 ## Notes
 
+- Scripts are copy-safe per flowcell: no hardcoded flowcell paths (since
+  v2.3.0); logs and output always land in/under the submit directory.
 - Models are pinned explicitly so a future dorado release can never silently
   select a different model.
 - Every script prints `SCRIPT_NAME` / `SCRIPT_VERSION` in its log header.
